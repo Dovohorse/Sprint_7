@@ -1,15 +1,38 @@
 import pytest
 import requests
+import allure
 
 from helpers.generator import new_courier_creds
 from data import urls
 
 
+class HttpClient:
+    """HTTP-клиент с сессией requests и шагами Allure."""
+
+    def __init__(self):
+        self.session = requests.Session()
+
+    @allure.step("GET {url}")
+    def get(self, url, **kwargs):
+        return self.session.get(url, **kwargs)
+
+    @allure.step("POST {url}")
+    def post(self, url, **kwargs):
+        return self.session.post(url, **kwargs)
+
+    @allure.step("PUT {url}")
+    def put(self, url, **kwargs):
+        return self.session.put(url, **kwargs)
+
+    @allure.step("DELETE {url}")
+    def delete(self, url, **kwargs):
+        return self.session.delete(url, **kwargs)
+
+
 @pytest.fixture(scope="session")
 def http():
-    """Сессионный клиент requests."""
-    session = requests.Session()
-    return session
+    """HTTP клиент с сессионным requests.Session и шагами Allure."""
+    return HttpClient()
 
 
 @pytest.fixture
@@ -36,4 +59,4 @@ def courier(http):
 
     # удаление курьера после теста
     if courier_id:
-        http.delete(urls.COURIER_ID(courier_id), json={"id": courier_id})
+        http.delete(urls.COURIER_ID(courier_id))

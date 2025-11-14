@@ -1,24 +1,38 @@
 import allure
 import pytest
 
+from helpers.generator import new_courier_creds
 from data import urls
-from data.orders_payloads import base_order
 
 
-class TestOrdersCreate:
+@allure.title("Успешное создание курьера")
+def test_create_courier_success(http):
+    payload = new_courier_creds()
+    resp = http.post(urls.COURIER, data=payload)
 
-    @allure.title("Можно создать заказ с разными вариантами цвета")
-    @pytest.mark.parametrize("colors", [
-        ["BLACK"],
-        ["GREY"],
-        ["BLACK", "GREY"],
-        [],
-    ])
-    def test_create_order_colors(self, http, colors):
-        color_value = colors if colors else None
-        payload = base_order(color_value)
+    assert resp.status_code == 201
+    assert resp.json().get("ok") is True
 
-        resp = http.post(urls.ORDERS, json=payload)
 
-        assert resp.status_code == 201
-        assert "track" in resp.json()
+@allure.title("Нельзя создать двух курьеров с одинаковым логином")
+def test_create_courier_duplicate_login(http):
+    payload = new_courier_creds()
+
+    first = http.post(urls.COURIER, data=payload)
+    assert first.status_code in (201, 409)
+
+    second = http.post(urls.COURIER, data=payload)
+    assert second.status_code == 409
+    assert "Этот логин уже используется" in second.text
+
+
+@allure.title("Создание курьера без обязательного поля приводит к ошибке 400")
+@pytest.mark.parametrize("missing_field", ["login", "password"])
+def test_create_courier_missing_required_field(http, missing_field):
+    payload = new_courier_creds()
+    payload.pop(missing_field)
+
+    resp = http.post(urls.COURIER, data=payload)
+
+    assert resp.status_code == 400
+    assert "Недостаточно данных" in resp.text

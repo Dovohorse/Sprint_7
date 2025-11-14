@@ -16,7 +16,7 @@ class TestCourierDelete:
         )
         courier_id = login_resp.json()["id"]
 
-        resp = http.delete(urls.COURIER_ID(courier_id), json={"id": courier_id})
+        resp = http.delete(urls.COURIER_ID(courier_id))
 
         assert resp.status_code == 200
         assert resp.json().get("ok") is True
@@ -24,6 +24,6 @@ class TestCourierDelete:
     @allure.title("Удаление несуществующего курьера возвращает ошибку")
     def test_delete_courier_not_found(self, http):
         fake_id = 999999
-        resp = http.delete(urls.COURIER_ID(fake_id), json={"id": fake_id})
+        resp = http.delete(urls.COURIER_ID(fake_id))
 
         assert resp.status_code in (404, 400)
